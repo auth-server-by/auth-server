@@ -1,112 +1,186 @@
 #!/system/bin/sh
-# 私有云端核心｜免Root 卡密+性能+三层守护
-GITHUB_KEY_URL="https://raw.githubusercontent.com/auth-server-by/%E8%BA%AB%E4%BB%BD%E9%AA%8C%E8%AF%81%E6%9C%8D%E5%8A%A1%E5%99%A8/main/key.txt"
-BINGXIN_PACKAGE="com.bingxin.virtual"
-NIGHT_OWL_PACKAGE="com.night.owl"
-GAME_PACKAGE="com.pi.czrxdfirst"
-AUTH_FILE="/sdcard/MT/.auth_noroot.dat"
-CHECK_INTERVAL=3
+清楚的
 
-DEVICE_ID=$(settings get secure android_id)
-echo "=============================="
-echo "设备ID：$DEVICE_ID"
-echo "=============================="
+# ========== 你的专属云端配置（已填死） ==========
+CLOUD_API="https://raw.githubusercontent.com/auth-server/auth-server/main/key.txt"
 
-if [ -f "$AUTH_FILE" ]; then
-    echo "检测本地授权记录中..."
-    AUTH_INFO=$(cat "$AUTH_FILE")
-    SAVED_DEV=$(echo "$AUTH_INFO" | cut -d'|' -f1)
-    EXPIRE_DAY=$(echo "$AUTH_INFO" | cut -d'|' -f2)
-    NOW=$(date +%Y-%m-%d)
+# 守护包名（你指定的三个）
+APP_LIST=(
+com.pi.czrxdfirst
+com.night.owl
+com.excean.dualaid
+)
+PID_FILE="./guard.pid"
+# ==============================================
 
-    if [ "$SAVED_DEV" = "$DEVICE_ID" ]; then
-        if [ "$EXPIRE_DAY" = "永久" ] || [ "$EXPIRE_DAY" \> "$NOW" ]; then
-            echo "✅ 授权正常，进入性能+守护模式"
-            goto_daemon
-        else
-            echo "❌ 授权已过期，重新输入卡密"
-            rm -f "$AUTH_FILE"
-        fi
-    else
-        echo "❌ 设备不匹配，清除旧授权"
-        rm -f "$AUTH_FILE"
-    fi
-fi
-
-echo "请输入卡密："
-read -r IN_CARD
-
-echo "正在校验云端卡密..."
-KEY_RAW=$(curl -s "$GITHUB_KEY_URL")
-if [ -z "$KEY_RAW" ]; then
-    echo "❌ 网络错误，无法连接云端"
-    exit 1
-fi
-
-VALID=0
-OUT_EXPIRE=""
-OUT_BIND=""
-
-while IFS= read -r line; do
-    [ -z "$line" ] && continue
-    [[ "$line" =~ ^# ]] && continue
-    IFS=':' read -r k e b <<< "$line"
-    if [ "$k" = "$IN_CARD" ]; then
-        VALID=1
-        OUT_EXPIRE="$e"
-        OUT_BIND="$b"
-        break
-    fi
-done <<< "$KEY_RAW"
-
-if [ $VALID -eq 0 ]; then
-    echo "❌ 卡密无效"
-    exit 1
-fi
-
-NOW=$(date +%Y-%m-%d)
-if [ "$OUT_EXPIRE" != "永久" ] && [ "$OUT_EXPIRE" \< "$NOW" ]; then
-    echo "❌ 卡密已过期"
-    exit 1
-fi
-
-if [ -n "$OUT_BIND" ] && [ "$OUT_BIND" != "$DEVICE_ID" ]; then
-    echo "❌ 卡密已绑定其他设备"
-    exit 1
-fi
-
-echo "$DEVICE_ID|$OUT_EXPIRE" > "$AUTH_FILE"
-echo "✅ 激活成功，有效期：$OUT_EXPIRE"
-
-goto_daemon()
-{
-echo "🚀 执行免Root极致性能优化..."
-settings put global window_animation_scale 0
-settings put global transition_animation_scale 0
-settings put global animator_duration_scale 0
-settings put secure hw_overlay 0
-settings put secure force_gpu_render 1
-settings put system performance_mode 1
-am kill-all
-echo "✅ 免Root性能优化完成"
-echo "🛡️ 开始后台进程守护循环"
-
-while true
-do
-    if ! pgrep -f "$BINGXIN_PACKAGE" >/dev/null 2>&1; then
-        echo "⚠️ 冰心已退出，自动重启"
-        am start -n "$BINGXIN_PACKAGE/.MainActivity"
-        sleep 4
-    fi
-    if ! pgrep -f "$NIGHT_OWL_PACKAGE" >/dev/null 2>&1; then
-        echo "⚠️ 夜猫子已退出，自动重启"
-        sleep 3
-    fi
-    if ! pgrep -f "$GAME_PACKAGE" >/dev/null 2>&1; then
-        echo "⚠️ 游戏已闪退，自动重启"
-        am start -n "$GAME_PACKAGE/.MainActivity"
-        sleep 3
-    fi
-    sleep $CHECK_INTERVAL
-done
+# 退出清理
+cleanup() {
+清楚的
+回声"====================================="
+回声"   正在退出守护模式..."
+回声"====================================="
+    [ -f "$PID_FILE"] && {
+        PID=$(cat"$PID_FILE"2>/dev/null)
+        [ -n "$PID"]&&kill-0"$PID" 2>/dev/null && kill "$PID">/dev/null2>&1
+RM-f"$PID_FILE"
+    }
+回声"✅ 已退出所有保护模式"
+    出口 0
 }
+trap cleanup SIGINT SIGTERM
+
+# 云端卡密校验（对接你的专属仓库）
+cloud_key_check(){
+回声"===== 请输入云端授权卡密 ====="
+    read -r INPUT_KEY
+回声"🌐 正在连接你的专属云端校验..."
+
+    如果 curl -s --connect-timeout 5 "$CLOUD_API" | grep -qxF "$INPUT_KEY"; 然后
+回声"✅ 云端卡密验证通过！"
+睡1
+    其他
+回声"❌ 卡密无效/过期/网络异常"
+        出口 1
+Fi
+}
+
+# 重要注意事项弹窗
+show_notice(){
+清楚的
+回声"============================================="
+回声"            【重要使用注意事项】"
+回声"============================================="
+回声"  必须给3款软件全开权限："
+回声"  ✅ 悬浮窗权限"
+回声"  ✅ 后台弹出界面"
+回声"  ✅ 应用自启动"
+回声"  ✅ 关闭电池优化、允许后台活动"
+回声"---------------------------------------------"
+回声"  禁止一键清理后台，勿关闭终端窗口"
+回声"============================================="
+回声"按回车键 继续执行..."
+读取虚拟
+}
+
+# 自动跳转权限设置页
+jump_permission(){
+为pkg在...内"${APP_LIST[@]}"; 做
+回声"📲 正在跳转$pkg权限设置..."
+上午开始-机器人。设置。application_DETAILS_SETTINGS-d包：$pkg
+睡2
+已完成
+}
+
+# 全自动系统+游戏全套优化
+auto_optimize(){
+清楚的
+回声"====================================="
+回声"   正在执行全自动性能优化..."
+回声"====================================="
+回声"🔧 系统动画&后台限制优化中..."
+设置放置全局animator_duration_scale0
+设置放置全局窗口动画缩放0
+设置放置全局过渡动画缩放0
+设置放置全局app_process_limit4
+设置放置全局自动同步(_S)0
+设置将全局low_power0
+
+回声"🎮 游戏触控&显示优化中..."
+设置放置安全指针_速度7
+设置将系统屏幕亮度模式0
+设置将系统加速计_旋转0
+
+回声"🗑️ 释放系统缓存内存..."
+同步
+回声3>/proc/sys/vm/drop_caches2>/dev/null
+
+回声"✅ 全部优化执行完成！"
+睡1
+}
+
+# 多包名防闪退守护进程
+start_guard(){
+    [ -f "$PID_FILE"] && {
+        PID=$(cat"$PID_FILE"2>/dev/null)
+        [ -n "$PID"]&&kill-0"$PID" 2>/dev/null&&return
+RM-f"$PID_FILE"
+    }
+
+    (
+在…… 期间 正确; 做
+            # 内存释放保稳
+同步
+回声2>/proc/sys/vm/drop_caches2>/dev/null
+            # 逐个检测包名，被杀自动拉起
+为pkg在...内"${APP_LIST[@]}"；做
+dumpsys deviceidle白名单+"$pkg">/dev/null2>&1
+如果！皮多夫"$pkg">/dev/null2>&1；然后
+上午开始-n"${pkg}/.MainActivity">/dev/null2>&1
+Fi
+            已完成
+睡12
+        已完成
+) &
+回声$！>"$PID_FILE"
+}
+
+# 主流程：云端验证→注意事项→优化→权限跳转→守护
+cloud_key_check
+显像通知(_n)
+自动优化(_O)
+
+回声"====================================="
+回声"  即将自动跳转授权权限页面"
+回声"=====================================""====================================="
+睡1
+jump_permission
+
+回声"=====================================""====================================="
+回声"  授权完按回车进入守护界面""  授权完按回车进入守护界面"
+回声"=====================================""====================================="
+读取虚拟
+
+start_guard
+start_TIME=$(日期+%s)=$(日期+%s)
+
+# 时间线常驻守护界面（和你截图样式完全一致）
+在…… 期间 正确; 做
+清楚的
+现在=$(日期+"%)Y-%m-%d%H：%M：%S")"%Y-%m-%d%H：%M：%S")
+当前=$(日期+%s)
+运行时=$((CURRENT-START_TIME))
+H=$((RUNTIME/3600))H=$((RUNTIME/3600))
+美国=$((运行时间%3600)/60)
+s=$((RUNTIME%60))S=$((RUNTIME%60))
+
+回声"======================================================""======================================================"
+回声"    🛡️  正在守护进程运行中""    🛡️  正在守护进程运行中"
+回声"    🔒  多软件防闪退实时保护已开启""    🔒  多软件防闪退实时保护已开启"
+回声"======================================================""======================================================"
+回声"⏰当前时间：$现在""⏰当前时间：$现在"
+回声"An ️  已稳定运行：${H}h${M}米${S}s""An ️  已稳定运行：${H}h${M}米${S}s"
+回声"------------------------------------------------------""------------------------------------------------------"
+回声"    📦 守护应用列表：""    📦 守护应用列表："
+回声"com.pi.czrxdfirst""com.pi.czrxdfirst"
+回声"com.night.owl""com.night.owl"
+回声"com.excean.dualaid""com.excean.dualaid"
+回声"------------------------------------------------------""------------------------------------------------------"
+如果[-f"$PID_FILE"]；然后"$PID_FILE"]；然后
+PID=$(cat"$PID_FILE"2>/dev/null)PID=$(cat"$PID_FILE"2>/dev/null)
+如果[-n"$PID"]&&kill-0"$PID"2>/dev/null；然后"$PID"]&&kill-0"$PID"2>/dev/null；然后
+回声"    ✅ 守护状态：正常运行中""    ✅ 守护状态：正常运行中"
+        其他
+回声"    ❌ 守护掉线，自动重连中...""    ❌ 守护掉线，自动重连中..."
+start_guard
+Fi
+    其他
+回声"    ❌ 守护丢失，重新启动中...""    ❌ 守护丢失，重新启动中..."
+start_guard
+Fi
+回声"======================================================""======================================================"
+回声"    请勿关闭窗口 保持后台驻守""    请勿关闭窗口 保持后台驻守"
+回声""Ctrl+C一键退出并清理守护"""Ctrl+C一键退出并清理守护"
+回声"======================================================"======================================================"
+
+睡1
+已完成
