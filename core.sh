@@ -1,10 +1,10 @@
 #!/system/bin/sh
 clear
 
-# ========== 你的专属云端配置（已修正） ==========
+# 云端卡密地址
 CLOUD_API="https://raw.githubusercontent.com/auth-server-by/auth-server-by/main/key.txt"
 
-# 守护包名（你指定的三个）
+# 守护包名
 APP_LIST=(
 com.pi.czrxdfirst
 com.night.owl
@@ -30,7 +30,7 @@ cleanup() {
 }
 trap cleanup SIGINT SIGTERM
 
-# 云端卡密校验（对接你的专属仓库）
+# 云端卡密校验
 cloud_key_check(){
     echo "===== 请输入云端授权卡密 ====="
     read -r INPUT_KEY
@@ -47,7 +47,7 @@ cloud_key_check(){
     fi
 }
 
-# 重要注意事项弹窗
+# 注意事项
 show_notice(){
 clear
 echo "============================================="
@@ -61,10 +61,10 @@ echo "  ✅ 关闭电池优化/允许后台活动"
 echo "---------------------------------------------"
 echo "  禁止一键清理后台，勿关闭终端窗口"
 echo "============================================="
-read -p "按回车键 继续执行..."
+read -r -p "按回车键 继续执行..."
 }
 
-# 自动跳转权限设置页
+# 权限跳转
 jump_permission(){
 for pkg in "${APP_LIST[@]}"; do
     echo "🔍 正在跳转$pkg权限设置..."
@@ -73,7 +73,7 @@ for pkg in "${APP_LIST[@]}"; do
 done
 }
 
-# 全自动系统+游戏全套优化（无Root兼容）
+# 性能优化
 auto_optimize(){
 clear
 echo "====================================="
@@ -100,7 +100,7 @@ echo "✅ 全部优化执行完成！"
 sleep 1
 }
 
-# 多包名防闪退守护进程（无Root兼容版）
+# 守护进程
 start_guard(){
     [ -f "$PID_FILE" ] && rm -f "$PID_FILE"
 
@@ -119,7 +119,7 @@ start_guard(){
     echo $! > "$PID_FILE"
 }
 
-# 主流程：云端验证→注意事项→优化→权限跳转→守护
+# 主流程
 cloud_key_check
 show_notice
 auto_optimize
@@ -133,12 +133,12 @@ jump_permission
 echo "====================================="
 echo "授权完按回车进入守护界面"
 echo "====================================="
-read -p "授权完按回车进入守护界面"
+read -r -p "授权完按回车进入守护界面"
 
 start_guard
 START_TIME=$(date +%s)
 
-# 时间线常驻守护界面（和你截图样式完全一致）
+# 常驻界面
 while true; do
     clear
     NOW=$(date +"%Y-%m-%d %H:%M:%S")
