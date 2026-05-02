@@ -1,8 +1,8 @@
 #!/system/bin/sh
-清楚的
+clear
 
-# ========== 你的专属云端配置（已填死） ==========
-CLOUD_API="https://raw.githubusercontent.com/auth-server/auth-server/main/key.txt"
+# ========== 你的专属云端配置（已修正） ==========
+CLOUD_API="https://raw.githubusercontent.com/auth-server-by/auth-server-by/main/key.txt"
 
 # 守护包名（你指定的三个）
 APP_LIST=(
@@ -11,176 +11,169 @@ com.night.owl
 com.excean.dualaid
 )
 PID_FILE="./guard.pid"
-# ==============================================
 
 # 退出清理
 cleanup() {
-清楚的
-回声"====================================="
-回声"   正在退出守护模式..."
-回声"====================================="
-    [ -f "$PID_FILE"] && {
-        PID=$(cat"$PID_FILE"2>/dev/null)
-        [ -n "$PID"]&&kill-0"$PID" 2>/dev/null && kill "$PID">/dev/null2>&1
-RM-f"$PID_FILE"
-    }
-回声"✅ 已退出所有保护模式"
-    出口 0
+    clear
+    echo "====================================="
+    echo "   正在退出守护模式..."
+    echo "====================================="
+    if [ -f "$PID_FILE" ]; then
+        PID=$(cat "$PID_FILE" 2>/dev/null)
+        if [ -n "$PID" ]; then
+            kill "$PID" 2>/dev/null
+        fi
+        rm -f "$PID_FILE"
+    fi
+    echo "✅ 已安全退出，守护进程已关闭"
+    exit 0
 }
 trap cleanup SIGINT SIGTERM
 
 # 云端卡密校验（对接你的专属仓库）
 cloud_key_check(){
-回声"===== 请输入云端授权卡密 ====="
+    echo "===== 请输入云端授权卡密 ====="
     read -r INPUT_KEY
-回声"🌐 正在连接你的专属云端校验..."
+    echo "🌐 正在连接你的专属云端服务器验证..."
 
-    如果 curl -s --connect-timeout 5 "$CLOUD_API" | grep -qxF "$INPUT_KEY"; 然后
-回声"✅ 云端卡密验证通过！"
-睡1
-    其他
-回声"❌ 卡密无效/过期/网络异常"
-        出口 1
-Fi
+    KEY_VALID=$(curl -s --connect-timeout 5 "$CLOUD_API" | grep -qxF "$INPUT_KEY" && echo "valid" || echo "invalid")
+
+    if [ "$KEY_VALID" = "valid" ]; then
+        echo "✅ 云端卡密验证通过！"
+        sleep 1
+    else
+        echo "❌ 卡密无效/过期/网络异常"
+        exit 1
+    fi
 }
 
 # 重要注意事项弹窗
 show_notice(){
-清楚的
-回声"============================================="
-回声"            【重要使用注意事项】"
-回声"============================================="
-回声"  必须给3款软件全开权限："
-回声"  ✅ 悬浮窗权限"
-回声"  ✅ 后台弹出界面"
-回声"  ✅ 应用自启动"
-回声"  ✅ 关闭电池优化、允许后台活动"
-回声"---------------------------------------------"
-回声"  禁止一键清理后台，勿关闭终端窗口"
-回声"============================================="
-回声"按回车键 继续执行..."
-读取虚拟
+clear
+echo "============================================="
+echo "            【重要使用注意事项】            "
+echo "============================================="
+echo "  必须给3款软件开启以下权限："
+echo "  ✅ 悬浮窗权限"
+echo "  ✅ 后台弹出界面权限"
+echo "  ✅ 应用自启动权限"
+echo "  ✅ 关闭电池优化/允许后台活动"
+echo "---------------------------------------------"
+echo "  禁止一键清理后台，勿关闭终端窗口"
+echo "============================================="
+read -p "按回车键 继续执行..."
 }
 
 # 自动跳转权限设置页
 jump_permission(){
-为pkg在...内"${APP_LIST[@]}"; 做
-回声"📲 正在跳转$pkg权限设置..."
-上午开始-机器人。设置。application_DETAILS_SETTINGS-d包：$pkg
-睡2
-已完成
+for pkg in "${APP_LIST[@]}"; do
+    echo "🔍 正在跳转$pkg权限设置..."
+    am start -a android.settings.APPLICATION_DETAILS_SETTINGS -d "package:$pkg" >/dev/null 2>&1
+    sleep 2
+done
 }
 
-# 全自动系统+游戏全套优化
+# 全自动系统+游戏全套优化（无Root兼容）
 auto_optimize(){
-清楚的
-回声"====================================="
-回声"   正在执行全自动性能优化..."
-回声"====================================="
-回声"🔧 系统动画&后台限制优化中..."
-设置放置全局animator_duration_scale0
-设置放置全局窗口动画缩放0
-设置放置全局过渡动画缩放0
-设置放置全局app_process_limit4
-设置放置全局自动同步(_S)0
-设置将全局low_power0
+clear
+echo "====================================="
+echo "   正在执行全自动性能优化..."
+echo "====================================="
+echo "⚙️  系统动画&后台限制优化中..."
+settings put global animator_duration_scale 0
+settings put global window_animation_scale 0
+settings put global transition_animation_scale 0
+settings put global app_process_limit 4
+settings put global auto_sync 0
+settings put global low_power 0 2>/dev/null
 
-回声"🎮 游戏触控&显示优化中..."
-设置放置安全指针_速度7
-设置将系统屏幕亮度模式0
-设置将系统加速计_旋转0
+echo "🎮 游戏触控&显示优化中..."
+settings put secure pointer_speed 7
+settings put system screen_brightness_mode 0
+settings put system accelerometer_rotation 0 2>/dev/null
 
-回声"🗑️ 释放系统缓存内存..."
-同步
-回声3>/proc/sys/vm/drop_caches2>/dev/null
+echo "🧹 释放系统缓存内存..."
+sync
+echo 3 > /proc/sys/vm/drop_caches 2>/dev/null
 
-回声"✅ 全部优化执行完成！"
-睡1
+echo "✅ 全部优化执行完成！"
+sleep 1
 }
 
-# 多包名防闪退守护进程
+# 多包名防闪退守护进程（无Root兼容版）
 start_guard(){
-    [ -f "$PID_FILE"] && {
-        PID=$(cat"$PID_FILE"2>/dev/null)
-        [ -n "$PID"]&&kill-0"$PID" 2>/dev/null&&return
-RM-f"$PID_FILE"
-    }
+    [ -f "$PID_FILE" ] && rm -f "$PID_FILE"
 
     (
-在…… 期间 正确; 做
-            # 内存释放保稳
-同步
-回声2>/proc/sys/vm/drop_caches2>/dev/null
-            # 逐个检测包名，被杀自动拉起
-为pkg在...内"${APP_LIST[@]}"；做
-dumpsys deviceidle白名单+"$pkg">/dev/null2>&1
-如果！皮多夫"$pkg">/dev/null2>&1；然后
-上午开始-n"${pkg}/.MainActivity">/dev/null2>&1
-Fi
-            已完成
-睡12
-        已完成
-) &
-回声$！>"$PID_FILE"
+        while true; do
+            sync
+            echo 2 > /proc/sys/vm/drop_caches 2>/dev/null
+            for pkg in "${APP_LIST[@]}"; do
+                if ! pidof "$pkg" >/dev/null 2>&1; then
+                    am start -n "${pkg}/.MainActivity" >/dev/null 2>&1
+                fi
+            done
+            sleep 5
+        done
+    ) &
+    echo $! > "$PID_FILE"
 }
 
 # 主流程：云端验证→注意事项→优化→权限跳转→守护
 cloud_key_check
-显像通知(_n)
-自动优化(_O)
+show_notice
+auto_optimize
 
-回声"====================================="
-回声"  即将自动跳转授权权限页面"
-回声"=====================================""====================================="
-睡1
+echo "====================================="
+echo "   即将自动跳转授权权限页面"
+echo "====================================="
+sleep 2
 jump_permission
 
-回声"=====================================""====================================="
-回声"  授权完按回车进入守护界面""  授权完按回车进入守护界面"
-回声"=====================================""====================================="
-读取虚拟
+echo "====================================="
+echo "授权完按回车进入守护界面"
+echo "====================================="
+read -p "授权完按回车进入守护界面"
 
 start_guard
-start_TIME=$(日期+%s)=$(日期+%s)
+START_TIME=$(date +%s)
 
 # 时间线常驻守护界面（和你截图样式完全一致）
-在…… 期间 正确; 做
-清楚的
-现在=$(日期+"%)Y-%m-%d%H：%M：%S")"%Y-%m-%d%H：%M：%S")
-当前=$(日期+%s)
-运行时=$((CURRENT-START_TIME))
-H=$((RUNTIME/3600))H=$((RUNTIME/3600))
-美国=$((运行时间%3600)/60)
-s=$((RUNTIME%60))S=$((RUNTIME%60))
+while true; do
+    clear
+    NOW=$(date +"%Y-%m-%d %H:%M:%S")
+    RUNTIME=$(( $(date +%s) - START_TIME ))
+    H=$(( RUNTIME / 3600 ))
+    M=$(( (RUNTIME % 3600) / 60 ))
+    S=$(( RUNTIME % 60 ))
 
-回声"======================================================""======================================================"
-回声"    🛡️  正在守护进程运行中""    🛡️  正在守护进程运行中"
-回声"    🔒  多软件防闪退实时保护已开启""    🔒  多软件防闪退实时保护已开启"
-回声"======================================================""======================================================"
-回声"⏰当前时间：$现在""⏰当前时间：$现在"
-回声"An ️  已稳定运行：${H}h${M}米${S}s""An ️  已稳定运行：${H}h${M}米${S}s"
-回声"------------------------------------------------------""------------------------------------------------------"
-回声"    📦 守护应用列表：""    📦 守护应用列表："
-回声"com.pi.czrxdfirst""com.pi.czrxdfirst"
-回声"com.night.owl""com.night.owl"
-回声"com.excean.dualaid""com.excean.dualaid"
-回声"------------------------------------------------------""------------------------------------------------------"
-如果[-f"$PID_FILE"]；然后"$PID_FILE"]；然后
-PID=$(cat"$PID_FILE"2>/dev/null)PID=$(cat"$PID_FILE"2>/dev/null)
-如果[-n"$PID"]&&kill-0"$PID"2>/dev/null；然后"$PID"]&&kill-0"$PID"2>/dev/null；然后
-回声"    ✅ 守护状态：正常运行中""    ✅ 守护状态：正常运行中"
-        其他
-回声"    ❌ 守护掉线，自动重连中...""    ❌ 守护掉线，自动重连中..."
-start_guard
-Fi
-    其他
-回声"    ❌ 守护丢失，重新启动中...""    ❌ 守护丢失，重新启动中..."
-start_guard
-Fi
-回声"======================================================""======================================================"
-回声"    请勿关闭窗口 保持后台驻守""    请勿关闭窗口 保持后台驻守"
-回声""Ctrl+C一键退出并清理守护"""Ctrl+C一键退出并清理守护"
-回声"======================================================"======================================================"
+    echo "====================================="
+    echo "  🛡️  多软件防闪退实时守护已开启"
+    echo "====================================="
+    echo "⏰ 当前时间: $NOW"
+    echo "⏱️  已稳定运行: ${H}h${M}分${S}s"
+    echo "📦 守护应用列表:"
+    for pkg in "${APP_LIST[@]}"; do
+        echo "  - $pkg"
+    done
+    echo "====================================="
 
-睡1
-已完成
+    if [ -f "$PID_FILE" ]; then
+        PID=$(cat "$PID_FILE" 2>/dev/null)
+        if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+            echo "✅ 守护状态: 正常运行中"
+        else
+            echo "❌ 守护掉线，自动重连中..."
+            start_guard
+        fi
+    else
+        echo "❌ 守护丢失，重新启动中..."
+        start_guard
+    fi
+
+    echo "====================================="
+    echo "请勿关闭窗口 保持后台驻守"
+    echo "Ctrl+C一键退出并清理守护"
+    echo "====================================="
+    sleep 1
+done
