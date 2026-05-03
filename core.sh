@@ -1,31 +1,45 @@
-#!/system/bin/sh
+#!/data/data/com.termux/files/usr/bin/sh
+# 守护脚本_v2.1 公益授权版
+# 仓库：https://github.com/auth-server-by/auth-server-by
 
-# ==========================================
-# --- ⚠️ 版本强制检测 (测试用) ---
-# ==========================================
-CURRENT_VER="2.0"    # 当前脚本的版本号
-MIN_VER="3.0"        # 最低允许运行的版本号 (故意设为3.0测试强制更新)
+# ========== 配置区 ==========
+AUTH_KEY="群主大78"
+APP_PKG="com.pi.czrxdfirst"  # 《超自然》游戏包名
+FRAMEWORK_PKG="com.excean.dualaid"  # 冰心框架包名
+NIGHTOWL_PKG="com.night.owl"  # 夜猫子辅助包名
 
-# 比较版本，如果当前版本小于最低要求，则退出
-if [ "$(printf '%s\n' "$MIN_VER" "$CURRENT_VER" | sort -V | head -n1)" != "$CURRENT_VER" ]; then
-    echo " "
-    echo "❌ 错误：脚本版本过低！"
-    echo "🛑 当前版本：$CURRENT_VER"
-    echo "🛑 必须更新到 $MIN_VER 或以上版本才能运行。"
-    echo " "
+# ========== 自动授权模块 ==========
+echo "========================================"
+echo "守护脚本 V2.1 公益授权版"
+echo "========================================"
+echo "✅ 正在自动授权..."
+
+# 模拟卡密校验（兼容原有逻辑，跳过手动输入）
+if [ "$AUTH_KEY" = "群主大78" ]; then
+    echo "✅ 授权成功！正在启动守护进程..."
+else
+    echo "❌ 授权失败，请使用正确的公益卡密"
     exit 1
 fi
-# ==========================================
 
-# --- 下面是原来的模拟业务逻辑 ---
+# ========== 进程守护核心逻辑 ==========
+echo "🔍 开始监控游戏与框架进程..."
+while true; do
+    # 检查目标进程是否存活
+    if ! pgrep -f "$APP_PKG" > /dev/null; then
+        echo "⚠️  游戏进程已退出，尝试唤醒..."
+        am start -n "$APP_PKG/.MainActivity" > /dev/null 2>&1
+    fi
 
-echo "========================================"
-echo "🚀 主程序 core.sh 正在运行..."
-echo "当前时间: $(date)"
-echo "正在执行任务..."
-echo "========================================"
+    if ! pgrep -f "$FRAMEWORK_PKG" > /dev/null; then
+        echo "⚠️  冰心框架进程已退出，尝试唤醒..."
+        am start -n "$FRAMEWORK_PKG/.MainActivity" > /dev/null 2>&1
+    fi
 
-# 模拟任务运行
-sleep 5
+    if ! pgrep -f "$NIGHTOWL_PKG" > /dev/null; then
+        echo "⚠️  夜猫子辅助进程已退出，尝试唤醒..."
+        am start -n "$NIGHTOWL_PKG/.MainActivity" > /dev/null 2>&1
+    fi
 
-echo "任务执行完毕，等待下一次循环..."
+    sleep 30
+done
