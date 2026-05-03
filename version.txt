@@ -1,1 +1,2 @@
-404
+new_pay_version=2.1
+disable_version=1.0
