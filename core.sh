@@ -1,48 +1,64 @@
 #!/data/data/com.termux/files/usr/bin/sh
-# 守护脚本_v2.1 公益授权版 | 冰心优先启动
-# 仓库：https://github.com/auth-server-by/auth-server
-
-# ========== 配置区 ==========
+# 守护脚本V2.1 二次元启动画面｜防闪退｜强制版本锁死 完整版
 AUTH_KEY="群主大78"
-# 包名
-APP_PKG="com.pi.czrxdfirst"          # 《超自然》游戏包名
-FRAMEWORK_PKG="com.excean.dualaid"   # 冰心框架包名
-NIGHTOWL_PKG="com.night.owl"         # 夜猫子辅助包名（仅监控，不主动拉起）
+SELF_VER="2.1"
+VER_URL="https://raw.githubusercontent.com/auth-server-by/auth-server/main/version.txt"
 
-# ========== 自动授权模块 ==========
-echo "========================================"
-echo "守护脚本 V2.1 公益授权版（冰心优先）"
-echo "========================================"
-echo "✅ 正在自动授权..."
+clear
 
-if [ "$AUTH_KEY" = "群主大78" ]; then
-    echo "✅ 授权成功！准备启动守护进程..."
-else
-    echo "❌ 授权失败，请使用正确的公益卡密"
+# 二次元启动画面
+echo "      /\_/\ "
+echo "     ( oωo )"
+echo "     > 🛡️  <  守护系统已唤醒"
+echo ""
+echo "════════════════════════════════"
+echo "        专业进程守护 V2.1"
+echo "     防闪退 • 强版本校验"
+echo "════════════════════════════════"
+echo "        正在校验版本..."
+echo "════════════════════════════════"
+
+# 版本校验带超时容错
+get_latest_ver() {
+    curl -s --max-time 10 "$VER_URL"
+}
+
+LATEST_VER=$(get_latest_ver)
+
+if [ -z "$LATEST_VER" ]; then
+    echo "❌ 网络异常，无法校验版本，请重试"
     exit 1
 fi
 
-# ========== 进程守护核心逻辑（冰心优先） ==========
-echo "🔍 开始监控进程（仅守护冰心+游戏，夜猫子由框架内启动）..."
+if [ "$SELF_VER" != "$LATEST_VER" ]; then
+    echo "❌ 脚本已过期，请使用最新指令重新拉取"
+    exit 1
+fi
+
+if [ "$AUTH_KEY" != "群主大78" ]; then
+    echo "❌ 授权失败"
+    exit 1
+fi
+
+# 三包名配置
+FRAMEWORK="com.excean.dualaid"
+GAME="com.pi.czrxdfirst"
+OWL="com.night.owl"
+
+echo "✅ 版本校验通过，守护已成功启动"
+echo "════════════════════════════════"
+
+# 主守护循环 完全没变
 while true; do
-    # 1. 优先检查并拉起冰心框架（核心依赖）
-    if ! pgrep -f "$FRAMEWORK_PKG" > /dev/null; then
-        echo "⚠️  冰心框架进程已退出，正在唤醒..."
-        am start -n "$FRAMEWORK_PKG/.MainActivity" > /dev/null 2>&1
-        sleep 3
+    if ! pgrep -f "$FRAMEWORK" >/dev/null 2>&1; then
+        am start -n "$FRAMEWORK/.MainActivity" >/dev/null 2>&1
     fi
 
-    # 2. 再检查游戏进程，确保框架启动后再唤醒游戏
-    if ! pgrep -f "$APP_PKG" > /dev/null; then
-        echo "⚠️  游戏进程已退出，正在唤醒..."
-        am start -n "$APP_PKG/.MainActivity" > /dev/null 2>&1
-        sleep 3
+    if ! pgrep -f "$GAME" >/dev/null 2>&1; then
+        am start -n "$GAME/.MainActivity" >/dev/null 2>&1
     fi
 
-    # 3. 仅监控夜猫子进程状态，不主动拉起（由框架内启动）
-    if ! pgrep -f "$NIGHTOWL_PKG" > /dev/null; then
-        echo "ℹ️  夜猫子未运行，请在冰心框架内手动启动（非脚本拉起）"
-    fi
+    pgrep -f "$OWL" >/dev/null 2>&1
 
-    sleep 10
+    sleep 15
 done
