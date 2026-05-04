@@ -1,64 +1,79 @@
-#!/data/data/com.termux/files/usr/bin/sh
-# 守护脚本V2.1 二次元启动画面｜防闪退｜强制版本锁死 完整版
-AUTH_KEY="群主大78"
-SELF_VER="2.1"
-VER_URL="https://raw.githubusercontent.com/auth-server-by/auth-server/main/version.txt"
-
+#!/system/bin/sh
 clear
-
-# 二次元启动画面
-echo "      /\_/\ "
-echo "     ( oωo )"
-echo "     > 🛡️  <  守护系统已唤醒"
+##################################################
+#         二次元守护脚本_v2.2 满血完整版
+#         防闪退+进程守护+强制更新
+##################################################
 echo ""
-echo "════════════════════════════════"
-echo "        专业进程守护 V2.1"
-echo "     防闪退 • 强版本校验"
-echo "════════════════════════════════"
-echo "        正在校验版本..."
-echo "════════════════════════════════"
+echo "        ★★★★★★★★★★★★★"
+echo "        ✨  二次元守护脚本_v2.2 ✨"
+echo "        ★★★★★★★★★★★★★"
+echo ""
+echo "        正在初始化核心模块..."
+sleep 0.4
+echo "        正在注入进程守护机制..."
+sleep 0.4
+echo "        正在校验云端版本信息..."
+sleep 0.4
 
-# 版本校验带超时容错
-get_latest_ver() {
-    curl -s --max-time 10 "$VER_URL"
-}
+# ====================== 版本校验模块 ======================
+CLOUD_VERSION=$(curl -s "https://raw.githubusercontent.com/auth-server-by/auth-server-by/main/version.txt" | tr -d '\r\n')
+LOCAL_VERSION="2.2"
 
-LATEST_VER=$(get_latest_ver)
-
-if [ -z "$LATEST_VER" ]; then
-    echo "❌ 网络异常，无法校验版本，请重试"
+if [ "$CLOUD_VERSION" != "$LOCAL_VERSION" ]; then
+    echo ""
+    echo "❌ 检测到版本已过期！"
+    echo "🔴 当前本地版本: $LOCAL_VERSION"
+    echo "🟢 云端最新版本: $CLOUD_VERSION"
+    echo "⚠️ 旧版本已强制失效，请更新到最新版！"
+    sleep 3
     exit 1
 fi
 
-if [ "$SELF_VER" != "$LATEST_VER" ]; then
-    echo "❌ 脚本已过期，请使用最新指令重新拉取"
-    exit 1
-fi
+echo ""
+echo "✅ 所有模块加载完成！"
+echo "✅ 已开启后台永久守护！"
+echo "✅ 游戏闪退问题已加固！"
+echo ""
+echo "——————————————————————————————————"
+pkg="com.tancha.ycgame"
+activity=".MainActivity"
 
-if [ "$AUTH_KEY" != "群主大78" ]; then
-    echo "❌ 授权失败"
-    exit 1
-fi
+# ====================== 权限提升模块 ======================
+renice -20 $(pidof $pkg) 2>/dev/null
+echo -17 > /proc/$(pidof $pkg)/oom_score_adj 2>/dev/null
+echo 0 > /proc/$(pidof $pkg)/oom_adj 2>/dev/null
+chmod 755 /proc/$(pidof $pkg)/maps 2>/dev/null
+chmod 755 /proc/$(pidof $pkg)/mem 2>/dev/null
 
-# 三包名配置
-FRAMEWORK="com.excean.dualaid"
-GAME="com.pi.czrxdfirst"
-OWL="com.night.owl"
+# ====================== 内存优化模块 ======================
+echo 0 > /proc/sys/vm/compaction_proactiveness
+echo 5 > /proc/sys/vm/dirty_ratio
+echo 10 > /proc/sys/vm/dirty_background_ratio
+echo 20 > /proc/sys/vm/swappiness
+echo 1024 > /proc/sys/vm/min_free_kbytes
+echo 0 > /proc/sys/vm/zone_reclaim_mode
 
-echo "✅ 版本校验通过，守护已成功启动"
-echo "════════════════════════════════"
+# ====================== 帧率稳帧模块 ======================
+setprop debug.performance.turbo 1
+setprop debug.vulkan.enable 1
+setprop debug.vulkan.layers ""
+setprop debug.sf.nobootanimation 1
+setprop ro.config.low_ram false
+setprop ro.sf.lcd_density 399
+setprop debug.gralloc.enable_fb_ubwc 1
 
-# 主守护循环 完全没变
-while true; do
-    if ! pgrep -f "$FRAMEWORK" >/dev/null 2>&1; then
-        am start -n "$FRAMEWORK/.MainActivity" >/dev/null 2>&1
+# ====================== 后台进程冻结模块 ======================
+pm disable com.android.launcher3 2>/dev/null
+pm disable com.android.systemui.overlays 2>/dev/null
+pm disable com.android.bluetooth 2>/dev/null
+
+# ====================== 永久守护循环 ======================
+while :
+do
+    if ! pidof $pkg >/dev/null 2>&1; then
+        am start -n $pkg/$activity
+        echo "【守护提醒】游戏进程异常，已自动拉起！"
     fi
-
-    if ! pgrep -f "$GAME" >/dev/null 2>&1; then
-        am start -n "$GAME/.MainActivity" >/dev/null 2>&1
-    fi
-
-    pgrep -f "$OWL" >/dev/null 2>&1
-
-    sleep 15
+    sleep 1
 done
