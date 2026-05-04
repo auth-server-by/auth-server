@@ -3,11 +3,11 @@ GUARD_URL="https://raw.githubusercontent.com/auth-server-by/auth-server/main/gua
 GUARD_FILE="$HOME/guard.sh"
 echo "下拉最新守护脚本..."
 curl -sLo "$GUARD_FILE" "$GUARD_URL"
-if [ ! -s "$GUARD_FILE" ]; 然后
+if [ ! -s "$GUARD_FILE" ]; then
   echo "下载失败"
   exit 1
 fi
-if ! grep -q "二次元守护" "$GUARD_FILE"; 然后
+if ! grep -q "二次元守护" "$GUARD_FILE"; then
   echo "校验失败"
   rm "$GUARD_FILE"
   exit 1
