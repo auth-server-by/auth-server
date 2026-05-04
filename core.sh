@@ -16,7 +16,7 @@ sleep 0.4
 echo "        正在校验云端版本信息..."
 sleep 0.4
 
-# ====================== 版本校验模块 ======================
+# ====================== 版本校验模块（地址已修正）======================
 CLOUD_VERSION=$(curl -s "https://raw.githubusercontent.com/auth-server-by/auth-server-by/main/version.txt" | tr -d '\r\n')
 LOCAL_VERSION="2.2"
 
