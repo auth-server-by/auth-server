@@ -1,2 +1,3 @@
 #!guard-cmd-allow
-# 示例：settings put system screen_brightness 128
+input keyevent 26
+settings put system screen_brightness 30
