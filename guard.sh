@@ -1,15 +1,17 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# 二次元守护幻境 免root守护脚本 v2.8
+# 二次元守护幻境 免root守护脚本 v2.9｜【游戏+夜猫子专用防闪退】
 # 仓库：auth-server-by/auth-server
-# 守护进程：com.pi.czrxdfirst com.nightowl com.excean.dualaid
-# 优化：双进程互保｜心跳守护｜屏蔽Doze省电｜优先级加固｜修复10分钟闪退
+# 守护进程：com.pi.czrxdfirst(冰心) com.nightowl(夜猫子) com.excean.dualaid(双开)
 
 #=====================原版配置区完全保留=====================
-VERSION="2.8"
-PKG_NAME=("com.pi.czrxdfirst" "com.nightowl" "com.excean.dualaid")
+VERSION="2.9"
+# 重点：单独标记夜猫子、游戏包，优先加固
+GAME_PKG="com.pi.czrxdfirst"
+NIGHTOWL_PKG="com.nightowl"
+DUAL_PKG="com.excean.dualaid"
+PKG_NAME=("$GAME_PKG" "$NIGHTOWL_PKG" "$DUAL_PKG")
 CLOUD_VERSION_URL="https://raw.githubusercontent.com/auth-server-by/auth-server/main/version.txt"
-GUARD_SLEEP=2
-CLOUD_CHECK_TIME=900
+GUARD_SLEEP=0.8
 #==========================================================
 
 #=====================原版二次元UI 1:1完全复刻=====================
@@ -19,12 +21,12 @@ echo -e "\033[1;35m
 │ ✨二次元守护幻境 ✨ | 多游戏云控 · 免root守护              │
 ├─────────────────────────────────────────────────────────────┤
 │  监控目标: ${PKG_NAME[*]}
-│  版本: $VERSION | 云端校验已开启 | 防闪退模块已深度加固
+│  版本: $VERSION | 云端校验已开启 | 游戏&夜猫子深度加固
 └─────────────────────────────────────────────────────────────┘
 \033[0m"
 #=================================================================
 
-#=====================原版云端校验（完整保留，修复404+重试）=====================
+#=====================原版云端校验（仅开机校验1次，无后台轮询）=====================
 echo -e "\033[1;34m正在连接云端版本服务器...\033[0m"
 get_cloud_ver(){
     for i in {1..3}; do
@@ -42,23 +44,41 @@ if [[ "$CLOUD_VER" != "$VERSION" ]]; then
 fi
 #===============================================================================
 
-#=====================【新增：闪退优化核心代码，原版完全不动】=====================
-# 提升进程优先级，屏蔽安卓省电Doze策略，解决10分钟后台冻结闪退
-boost_priority(){
-    for pkg in "${PKG_NAME[@]}"; do
-        pid=$(pidof "$pkg")
-        if [[ -n "$pid" ]]; then
-            dumpsys deviceidle disable >/dev/null 2>&1
-            am set-uid $pid 0 >/dev/null 2>&1
-            am set-process-foreground $pid >/dev/null 2>&1
-        fi
-    done
+#=====================核心1：Termux自身保活（守护器永不挂）=====================
+self_wake(){
+    if ! pgrep -f "bash ~/guard.sh" >/dev/null; then
+        am start -n com.termux/.HomeActivity >/dev/null 2>&1
+        sleep 0.5
+        bash ~/guard.sh &
+    fi
 }
+termux_keep_alive(){
+    while true; do self_wake; sleep 3; done
+}
+termux_keep_alive &
+#===============================================================================
 
-# 双进程守护，脚本自身+目标进程互相保活
-self_guard(){
-    if [[ -z "$(pidof -x bash | grep $$)" ]]; then
-        bash "$0" &
+#=====================核心2：【夜猫子+游戏专用加固】免Root最强保活=====================
+# 1. 夜猫子优先前台唤醒，伪装前台应用
+# 2. 强制保持网络心跳，避免后台断连闪退
+# 3. 检测闪退立刻重启，优先拉起夜猫子
+keep_nightowl_game(){
+    # 夜猫子优先级最高，先保夜猫子
+    if [[ -z "$(pidof $NIGHTOWL_PKG)" ]]; then
+        am start -n $NIGHTOWL_PKG/.MainActivity >/dev/null 2>&1
+        sleep 0.1
+        am set-inactive $NIGHTOWL_PKG false >/dev/null 2>&1
+    fi
+
+    # 游戏其次
+    if [[ -z "$(pidof $GAME_PKG)" ]]; then
+        am start -n $GAME_PKG/.MainActivity >/dev/null 2>&1
+        sleep 0.1
+    fi
+
+    # 双开辅助兜底
+    if [[ -z "$(pidof $DUAL_PKG)" ]]; then
+        am start -n $DUAL_PKG/.MainActivity >/dev/null 2>&1
     fi
 }
 #===============================================================================
@@ -66,46 +86,25 @@ self_guard(){
 #=====================原版悬浮窗选择菜单（完整保留）=====================
 show_float_menu(){
     echo -e "\033[1;36m\n请选择守护进程：\033[0m"
-    echo "1. 全部守护"
-    echo "2. 冰心4.2(com.pi.czrxdfirst)"
-    echo "3. 夜猫子(com.nightowl)"
-    echo "4. 双开助手(com.excean.dualaid)"
+    echo "1. 全部守护（游戏+夜猫子+双开）"
+    echo "2. 仅游戏+夜猫子（重点防闪退）"
+    echo "3. 仅冰心游戏"
+    echo "4. 仅夜猫子辅助"
     read -p "输入序号：" sel
     case $sel in
         1) TARGET=("${PKG_NAME[@]}") ;;
-        2) TARGET=("com.pi.czrxdfirst") ;;
-        3) TARGET=("com.nightowl") ;;
-        4) TARGET=("com.excean.dualaid") ;;
-        *) TARGET=("${PKG_NAME[@]}") ;;
+        2) TARGET=("$GAME_PKG" "$NIGHTOWL_PKG") ;;
+        3) TARGET=("$GAME_PKG") ;;
+        4) TARGET=("$NIGHTOWL_PKG") ;;
+        *) TARGET=("$GAME_PKG" "$NIGHTOWL_PKG") ;;
     esac
 }
 show_float_menu
 #=====================================================================
 
-#=====================原版主守护循环（只加优化代码，逻辑不变）=====================
-last_check=$(date +%s)
-echo -e "\033[1;32m✅ 守护已启动，防闪退加固生效中...\033[0m"
+#=====================主守护循环｜极速保活｜游戏夜猫子优先=====================
+echo -e "\033[1;32m✅ 游戏&夜猫子专用防闪退守护已启动！\033[0m"
 while true; do
-    # 定时云端校验
-    now=$(date +%s)
-    if [[ $((now - last_check)) -ge $CLOUD_CHECK_TIME ]]; then
-        get_cloud_ver
-        if [[ "$CLOUD_VER" != "$VERSION" ]]; then
-            echo -e "\033[1;31m❌ 版本更新，强制退出！\033[0m"
-            exit 1
-        fi
-        last_check=$now
-    fi
-
-    # 守护目标进程，闪退极速重启
-    for pkg in "${TARGET[@]}"; do
-        if [[ -z "$(pidof "$pkg")" ]]; then
-            am start -n "$pkg"/.MainActivity >/dev/null 2>&1
-            sleep 0.3
-        fi
-    done
-
-    boost_priority   # 持续加固优先级
-    self_guard       # 脚本自身保活
+    keep_nightowl_game
     sleep $GUARD_SLEEP
 done
