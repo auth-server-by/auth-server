@@ -1,5 +1,5 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# 二次元守护幻境 免root守护脚本 v2.9｜极致终极版｜游戏&夜猫子永不闪退
+# 二次元守护幻境 免root守护脚本 v2.9｜极致终极版｜修复跳过菜单无限循环
 # 仓库：auth-server-by/auth-server
 # 守护进程：com.pi.czrxdfirst(冰心游戏) com.nightowl(夜猫子) com.excean.dualaid(双开)
 
@@ -9,10 +9,9 @@ GAME_PKG="com.pi.czrxdfirst"
 NIGHTOWL_PKG="com.nightowl"
 DUAL_PKG="com.excean.dualaid"
 PKG_NAME=("$GAME_PKG" "$NIGHTOWL_PKG" "$DUAL_PKG")
-# 云端校验强制国内加速，彻底解决缓存版本不匹配
 CLOUD_VERSION_URL="https://ghfast.top/https://raw.githubusercontent.com/auth-server-by/auth-server/main/version.txt"
-GUARD_SLEEP=0.9          # 精准心跳，不频繁不卡顿
-NOISE_CHECK_INTERVAL=120 # 2分钟静默降噪，防系统风控
+GUARD_SLEEP=0.9
+NOISE_CHECK_INTERVAL=120
 #==========================================================
 
 #=====================原版二次元UI 1:1完整复刻=====================
@@ -27,14 +26,18 @@ echo -e "\033[1;35m
 \033[0m"
 #=================================================================
 
-#=====================云端版本校验｜仅开机校验1次，无后台轮询=====================
+#=====================云端版本校验｜严格2次重试，不卡死=====================
 echo -e "\033[1;34m正在连接云端版本服务器...\033[0m"
 get_cloud_ver(){
-    for i in {1..4}; do
-        CLOUD_VER=$(curl -s --max-time 8 "$CLOUD_VERSION_URL")
+    for i in {1..2}; do
+        CLOUD_VER=$(curl -s --max-time 5 "$CLOUD_VERSION_URL")
         [[ -n "$CLOUD_VER" ]] && break
-        sleep 1
+        sleep 0.8
     done
+    if [[ -z "$CLOUD_VER" ]]; then
+        echo -e "\033[1;33m⚠️ 云端连接超时，本地模式启动\033[0m"
+        CLOUD_VER="$VERSION"
+    fi
 }
 get_cloud_ver
 
@@ -45,8 +48,7 @@ if [[ "$CLOUD_VER" != "$VERSION" ]]; then
 fi
 #===============================================================================
 
-#=====================【极致1：Termux三进程连环保活｜守护器绝对不死】=====================
-# 主进程+子进程+后台进程 互相唤醒，Termux被杀1秒内自动重启+重跑脚本
+#=====================【修复：Termux保活放到菜单之后启动，不抢占主线程】=====================
 self_core_wake(){
     local pid_self=$$
     if ! pgrep -f "bash ~/guard.sh" | grep -v $pid_self >/dev/null; then
@@ -54,65 +56,47 @@ self_core_wake(){
     fi
 }
 
-# 后台永久保活线程，独立运行不被主循环影响
 termux_ultra_keepalive(){
     while true; do
         self_core_wake
-        # 唤醒Termux前台，避免被系统深度休眠
         am start -n com.termux/.HomeActivity >/dev/null 2>&1
         sleep 4
     done
 }
-# 启动双后台保活
-termux_ultra_keepalive &
-sleep 0.3
-termux_ultra_keepalive &
-#===============================================================================
-
-#=====================【极致2：游戏专属逻辑｜只保前台、绝不重启，根治闪退】=====================
-# 核心：游戏一旦重启=必闪退掉线，全程维持活跃、屏蔽冻结、拒绝休眠
-game_ultra_protect(){
-    if [[ -n "$(pidof $GAME_PKG)" ]]; then
-        # 免Root强制保持前台活跃，禁用系统休眠/冻结/Doze
-        am set-inactive $GAME_PKG false >/dev/null 2>&1
-        dumpsys activity services $GAME_PKG >/dev/null 2>&1
-        dumpsys activity top | grep $GAME_PKG >/dev/null 2>&1
-        # 持续心跳唤醒，不让系统判定闲置
-        input keyevent 26 >/dev/null 2>&1
-    fi
-}
-#===============================================================================
-
-#=====================【极致3：夜猫子最高优先级｜0.05秒极速重启，永不离线】=====================
-nightowl_ultra_protect(){
-    if [[ -z "$(pidof $NIGHTOWL_PKG)" ]]; then
-        am start -n $NIGHTOWL_PKG/.MainActivity >/dev/null 2>&1
-        sleep 0.05
-        am set-inactive $NIGHTOWL_PKG false >/dev/null 2>&1
-        # 伪装前台应用，绕过系统查杀黑名单
-        dumpsys window w | grep $NIGHTOWL_PKG >/dev/null 2>&1
-    fi
-}
-#===============================================================================
-
-#=====================【极致4：双开兜底+全局降噪｜降低系统风控概率】=====================
-dual_protect(){
-    if [[ -z "$(pidof $DUAL_PKG)" ]]; then
-        am start -n $DUAL_PKG/.MainActivity >/dev/null 2>&1
-    fi
-}
 
 noise_reduce(){
-    # 2分钟清理一次冗余日志，降低CPU占用
     while true; do
         sleep $NOISE_CHECK_INTERVAL
         dmesg -c >/dev/null 2>&1
     done
 }
-noise_reduce &
 #===============================================================================
 
-#=====================原版守护进程选择菜单（完整保留，新增极致模式）=====================
+#=====================游戏&夜猫子极致保活核心=====================
+game_ultra_protect(){
+    if [[ -n "$(pidof $GAME_PKG)" ]]; then
+        am set-inactive $GAME_PKG false >/dev/null 2>&1
+        dumpsys activity services $GAME_PKG >/dev/null 2>&1
+        dumpsys activity top | grep $GAME_PKG >/dev/null 2>&1
+    fi
+}
+
+nightowl_ultra_protect(){
+    if [[ -z "$(pidof $NIGHTOWL_PKG)" ]]; then
+        am start -n $NIGHTOWL_PKG/.MainActivity >/dev/null 2>&1
+        sleep 0.05
+        am set-inactive $NIGHTOWL_PKG false >/dev/null 2>&1
+    fi
+}
+
+dual_protect(){
+    if [[ -z "$(pidof $DUAL_PKG)" ]]; then
+        am start -n $DUAL_PKG/.MainActivity >/dev/null 2>&1
+    fi
+}
+#===============================================================================
+
+#=====================守护进程选择菜单【优先执行，不会跳过】=====================
 show_float_menu(){
     echo -e "\033[1;36m\n请选择守护模式：\033[0m"
     echo "1. 极致全守护（游戏+夜猫子+双开｜终极防闪退）"
@@ -128,10 +112,15 @@ show_float_menu(){
         *) TARGET=("$GAME_PKG" "$NIGHTOWL_PKG") ;;
     esac
 }
+# 【关键】菜单**最先执行**，后台保活全部放菜单之后
 show_float_menu
+
+# 菜单选完，再启动后台保活（不会跳过菜单）
+termux_ultra_keepalive &
+noise_reduce &
 #=====================================================================
 
-#=====================主循环｜极致保活逻辑闭环｜全程无断点=====================
+#=====================主循环｜极致保活闭环=====================
 echo -e "\033[1;32m✅ 【极致终极版】游戏&夜猫子永不闪退守护已启动！\033[0m"
 while true; do
     nightowl_ultra_protect
