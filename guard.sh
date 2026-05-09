@@ -1,20 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# 二次元守护幻境 免root守护脚本 v2.9｜【游戏+夜猫子专用防闪退】
+# 二次元守护幻境 免root守护脚本 v2.9｜游戏&夜猫子深度加固｜修复GitHub缓存问题
 # 仓库：auth-server-by/auth-server
 # 守护进程：com.pi.czrxdfirst(冰心) com.nightowl(夜猫子) com.excean.dualaid(双开)
 
-#=====================原版配置区完全保留=====================
+#=====================配置区（校验强制走国内加速，解决缓存）=====================
 VERSION="2.9"
-# 重点：单独标记夜猫子、游戏包，优先加固
 GAME_PKG="com.pi.czrxdfirst"
 NIGHTOWL_PKG="com.nightowl"
 DUAL_PKG="com.excean.dualaid"
 PKG_NAME=("$GAME_PKG" "$NIGHTOWL_PKG" "$DUAL_PKG")
-CLOUD_VERSION_URL="https://raw.githubusercontent.com/auth-server-by/auth-server/main/version.txt"
+CLOUD_VERSION_URL="https://ghfast.top/https://raw.githubusercontent.com/auth-server-by/auth-server/main/version.txt"
 GUARD_SLEEP=0.8
 #==========================================================
 
-#=====================原版二次元UI 1:1完全复刻=====================
+#=====================原版UI 1:1复刻=====================
 clear
 echo -e "\033[1;35m
 ┌─────────────────────────────────────────────────────────────┐
@@ -26,7 +25,7 @@ echo -e "\033[1;35m
 \033[0m"
 #=================================================================
 
-#=====================原版云端校验（仅开机校验1次，无后台轮询）=====================
+#=====================云端版本校验=====================
 echo -e "\033[1;34m正在连接云端版本服务器...\033[0m"
 get_cloud_ver(){
     for i in {1..3}; do
@@ -44,7 +43,7 @@ if [[ "$CLOUD_VER" != "$VERSION" ]]; then
 fi
 #===============================================================================
 
-#=====================核心1：Termux自身保活（守护器永不挂）=====================
+#=====================Termux自身保活=====================
 self_wake(){
     if ! pgrep -f "bash ~/guard.sh" >/dev/null; then
         am start -n com.termux/.HomeActivity >/dev/null 2>&1
@@ -58,32 +57,24 @@ termux_keep_alive(){
 termux_keep_alive &
 #===============================================================================
 
-#=====================核心2：【夜猫子+游戏专用加固】免Root最强保活=====================
-# 1. 夜猫子优先前台唤醒，伪装前台应用
-# 2. 强制保持网络心跳，避免后台断连闪退
-# 3. 检测闪退立刻重启，优先拉起夜猫子
+#=====================夜猫子+游戏优先保活核心=====================
 keep_nightowl_game(){
-    # 夜猫子优先级最高，先保夜猫子
     if [[ -z "$(pidof $NIGHTOWL_PKG)" ]]; then
         am start -n $NIGHTOWL_PKG/.MainActivity >/dev/null 2>&1
         sleep 0.1
         am set-inactive $NIGHTOWL_PKG false >/dev/null 2>&1
     fi
-
-    # 游戏其次
     if [[ -z "$(pidof $GAME_PKG)" ]]; then
         am start -n $GAME_PKG/.MainActivity >/dev/null 2>&1
         sleep 0.1
     fi
-
-    # 双开辅助兜底
     if [[ -z "$(pidof $DUAL_PKG)" ]]; then
         am start -n $DUAL_PKG/.MainActivity >/dev/null 2>&1
     fi
 }
 #===============================================================================
 
-#=====================原版悬浮窗选择菜单（完整保留）=====================
+#=====================守护进程选择菜单=====================
 show_float_menu(){
     echo -e "\033[1;36m\n请选择守护进程：\033[0m"
     echo "1. 全部守护（游戏+夜猫子+双开）"
@@ -102,7 +93,7 @@ show_float_menu(){
 show_float_menu
 #=====================================================================
 
-#=====================主守护循环｜极速保活｜游戏夜猫子优先=====================
+#=====================主守护循环=====================
 echo -e "\033[1;32m✅ 游戏&夜猫子专用防闪退守护已启动！\033[0m"
 while true; do
     keep_nightowl_game
