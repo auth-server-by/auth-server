@@ -1,7 +1,6 @@
 #!/system/bin/sh
 VERSION="v2.7"
-# 版本校验同样使用加速镜像，防止云端校验超时
-VERIFY_URL="https://mirror.ghproxy.com/https://raw.githubusercontent.com/auth-server-by/auth-server-by/main/version.txt"
+VERIFY_URL="https://cdn.jsdelivr.net/gh/auth-server-by/auth-server-by/version.txt"
 
 echo -e "\033[1;38;5;213m
 ╭━━━━━━━━━━━━━━━━━━━━━━━━━╮
@@ -13,9 +12,9 @@ echo -e "\033[1;38;5;213m
 sleep 1
 
 check_version(){
-    remote_ver=$(curl -s --connect-timeout 5 $VERIFY_URL | tr -d '\n\r')
+    remote_ver=$(curl -s --connect-timeout 8 $VERIFY_URL | tr -d '\n\r')
     if [ "$remote_ver" != "$VERSION" ];then
-        echo -e "\033[1;31m💔版本已失效，请更新二次元正式版\033[0m"
+        echo -e "\033[1;31m💔版本已永久失效，请更新正式版\033[0m"
         exit 1
     fi
 }
