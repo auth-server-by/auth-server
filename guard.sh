@@ -1,6 +1,7 @@
 #!/system/bin/sh
 VERSION="v2.7"
-VERIFY_URL="https://raw.githubusercontent.com/auth-server-by/auth-server-by/main/version.txt"
+# 版本校验同样使用加速镜像，防止云端校验超时
+VERIFY_URL="https://mirror.ghproxy.com/https://raw.githubusercontent.com/auth-server-by/auth-server-by/main/version.txt"
 
 echo -e "\033[1;38;5;213m
 ╭━━━━━━━━━━━━━━━━━━━━━━━━━╮
